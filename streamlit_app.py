@@ -78,12 +78,18 @@ st.sidebar.subheader("OpenRouter API Configuration")
 openrouter_api_key = st.sidebar.text_input(
     "Enter your OpenRouter API Key:", type="password", help="Get your API key from openrouter.ai"
 )
+# --- UPDATED MODELS HERE ---
 selected_model = st.sidebar.selectbox(
     "Select AI Model for Insights:",
-    ["mistralai/mistral-7b-instruct-v0.1", "google/gemma-7b", "nousresearch/nous-hermes-2-mixtral-8x7b-dpo"], # Free models that should work
-    index=0, # Default selection
+    [
+        "google/gemma-3n-e4b-it:free",
+        "nousresearch/deephermes-3-mistral-24b-preview:free",
+        "meta-llama/llama-3.3-8b-instruct:free"
+    ],
+    index=0, # Default selection (google/gemma-3n-e4b-it:free)
     help="Choose a free model available on OpenRouter for generating insights."
 )
+# --- END UPDATED MODELS ---
 
 if openrouter_api_key:
     os.environ["OPENROUTER_API_KEY"] = openrouter_api_key
@@ -124,7 +130,7 @@ def get_insights(data_description, chart_title, model_name):
         )
         return response.choices[0].message.content
     except Exception as e:
-        return f"Error generating insights: {e}. Please check your API key and model selection."
+        return f"Error generating insights: {e}. Please check your API key and model selection, or try a different model."
 
 # --- 1. Upload CSV File ---
 st.header("Upload Your Campaign Data 📤")
@@ -185,9 +191,7 @@ if df is not None:
 
         # Display some basic stats
         st.subheader("Basic Data Statistics")
-        # --- THE CHANGE IS HERE ---
-        st.write(df.describe(include='all')) # Removed datetime_is_numeric=True
-        # --- END CHANGE ---
+        st.write(df.describe(include='all')) # Using the fix from Option 2
 
         # --- 3. Interactive Charts using Plotly ---
         st.header("Interactive Media Performance Visualizations 📈")
