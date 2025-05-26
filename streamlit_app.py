@@ -185,7 +185,9 @@ if df is not None:
 
         # Display some basic stats
         st.subheader("Basic Data Statistics")
-        st.write(df.describe(include='all', datetime_is_numeric=True))
+        # --- THE CHANGE IS HERE ---
+        st.write(df.describe(include='all')) # Removed datetime_is_numeric=True
+        # --- END CHANGE ---
 
         # --- 3. Interactive Charts using Plotly ---
         st.header("Interactive Media Performance Visualizations 📈")
