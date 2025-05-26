@@ -1,7 +1,3 @@
-streamlit
-pandas
-plotly
-numpy
 streamlit>=1.36.0
 pandas>=1.5.3 # Explicitly set for datetime_is_numeric=True compatibility
 plotly>=5.0.0
