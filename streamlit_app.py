@@ -140,8 +140,8 @@ with st.sidebar:
     # --- API Key Input ---
     st.subheader("OpenRouter API Configuration")
     openrouter_api_key = st.text_input(
-        "Enter your OpenRouter API Key:", 
-        type="password", 
+        "Enter your OpenRouter API Key:",
+        type="password",
         help="Paste your API key obtained from openrouter.ai. This key is used to generate AI insights and is not stored."
     )
     selected_model = st.selectbox(
@@ -174,7 +174,7 @@ def get_insights(data_description, chart_title, model_name):
     prompt = f"""
     Based on the following data for a Ramadan Campaign, provide 3 concise and actionable insights for the "{chart_title}" chart.
     Focus on trends, anomalies, or key takeaways that someone managing a media campaign would find useful.
-    
+
     Data Context:
     {data_description}
 
@@ -306,7 +306,7 @@ def generate_pdf_report(figures, insights_dict, report_name="Media_Intelligence_
                 if line.strip(): # Avoid empty paragraphs
                     story.append(Paragraph(line.strip(), insight_style))
             story.append(Spacer(1, 0.2 * inch))
-        
+
         # Add a page break after each chart if it's not the last one
         if i < len(figures) - 1:
             story.append(PageBreak())
@@ -332,34 +332,38 @@ if uploaded_file is not None:
     try:
         df = pd.read_csv(uploaded_file)
         st.success("File successfully uploaded! 🎉")
-        
+
         # --- 2. Data Cleaning and Preparation ---
         st.header("Data Cleaning and Preparation 🧹")
         st.markdown("Performing essential data cleaning steps to ensure accuracy and consistency for analysis.")
 
         # Store original columns to check against
         original_columns = df.columns.tolist()
-        
+
         # Normalize column names
         df.columns = [col.strip().replace(' ', '_').lower() for col in df.columns]
-        
+
         # Check for required columns after normalization
         required_columns = ['date', 'platform', 'sentiment', 'location', 'engagements', 'media_type']
         if not all(col in df.columns for col in required_columns):
             missing_cols = [col for col in required_columns if col not in df.columns]
-            st.error(f"Error: The uploaded CSV is missing the following required columns: {', '.join(missing_cols)}. Please check your file and ensure column names match the requirements (case-insensitive, spaces allowed).")
+            st.error(f"Error: The uploaded CSV is missing the following required columns: {', '.join(missing_cols)}. Please check your file and rename columns if necessary.")
             df = None # Invalidate df if critical columns are missing
-        
-        if df is not None:
+
+        # This 'if df is not None' should be correctly indented.
+        # It's crucial that it's NOT at the same level as the outer 'try',
+        # otherwise the outer 'except' might not catch errors from inside.
+        if df is not None: # This 'if' is inside the outer 'try'
             # Convert 'date' to datetime
-            try:
+            try: # Inner try 1
                 df['date'] = pd.to_datetime(df['date'])
                 st.success("✅ 'Date' column converted to datetime format.")
-            except Exception as e:
+            except Exception as e: # Inner except 1
                 st.error(f"Error converting 'Date' column to datetime: {e}. Please ensure the 'Date' column is in a recognized date format (e.g., YYYY-MM-DD, MM/DD/YYYY).")
                 df = None # Invalidate df if date conversion fails
 
-        if df is not None:
+        # This 'if df is not None' should be correctly indented.
+        if df is not None: # This 'if' is inside the outer 'try'
             # Fill missing 'engagements' with 0
             initial_na_engagements = df['engagements'].isnull().sum()
             df['engagements'] = df['engagements'].fillna(0)
@@ -369,7 +373,7 @@ if uploaded_file is not None:
                 st.success("✅ No missing 'Engagements' found.")
 
             st.success("✅ Column names normalized (e.g., 'Media Type' -> 'media_type').")
-            
+
             with st.expander("View Cleaned Data Snapshot & Stats 📈"):
                 st.write("First 5 rows of your cleaned data:")
                 st.dataframe(df.head())
@@ -387,7 +391,7 @@ if uploaded_file is not None:
             )
 
             st.divider() # Visual separator
-            
+
             # --- Interactive Filters in Sidebar ---
             st.sidebar.header("Filter Data for Charts 🔍")
             st.sidebar.markdown("Refine your analysis by selecting specific criteria.")
@@ -410,7 +414,7 @@ if uploaded_file is not None:
                 start_date, end_date = date_range
             elif date_range and len(date_range) == 1: # Handle case where only one date is selected
                 start_date, end_date = date_range[0], df['date'].max()
-            
+
             df_filtered = df[(df['date'] >= pd.to_datetime(start_date)) & (df['date'] <= pd.to_datetime(end_date))]
 
             # Platform Filter
@@ -486,15 +490,15 @@ if uploaded_file is not None:
                 st.subheader("1. Sentiment Breakdown 💬")
                 sentiment_counts = df_filtered['sentiment'].value_counts().reset_index()
                 sentiment_counts.columns = ['Sentiment', 'Count']
-                fig_sentiment = px.pie(sentiment_counts, 
-                                       values='Count', 
-                                       names='Sentiment', 
+                fig_sentiment = px.pie(sentiment_counts,
+                                       values='Count',
+                                       names='Sentiment',
                                        title='Distribution of Sentiments',
                                        color_discrete_sequence=px.colors.qualitative.Pastel)
                 fig_sentiment.update_traces(textposition='inside', textinfo='percent+label', hole=0.3) # Donut chart
                 st.plotly_chart(fig_sentiment, use_container_width=True)
                 figures_for_pdf["1. Sentiment Breakdown"] = fig_sentiment
-                
+
                 if client:
                     with st.expander("View AI Insights for Sentiment Breakdown"):
                         with st.spinner("Generating insights..."):
@@ -508,9 +512,9 @@ if uploaded_file is not None:
                 st.subheader("2. Media Type Mix 🖼️")
                 media_type_counts = df_filtered['media_type'].value_counts().reset_index()
                 media_type_counts.columns = ['Media Type', 'Count']
-                fig_media_type = px.pie(media_type_counts, 
-                                        values='Count', 
-                                        names='Media Type', 
+                fig_media_type = px.pie(media_type_counts,
+                                        values='Count',
+                                        names='Media Type',
                                         title='Distribution of Media Types',
                                         color_discrete_sequence=px.colors.qualitative.G10)
                 fig_media_type.update_traces(textposition='inside', textinfo='percent+label', hole=0.3) # Donut chart
@@ -531,9 +535,9 @@ if uploaded_file is not None:
                 st.subheader("3. Engagement Trend Over Time ⏳")
                 # Group by date and sum engagements for the trend
                 daily_engagements = df_filtered.groupby('date')['engagements'].sum().reset_index()
-                fig_engagement_trend = px.line(daily_engagements, 
-                                               x='date', 
-                                               y='engagements', 
+                fig_engagement_trend = px.line(daily_engagements,
+                                               x='date',
+                                               y='engagements',
                                                title='Total Engagements Over Time',
                                                markers=True,
                                                line_shape='spline',
@@ -555,9 +559,9 @@ if uploaded_file is not None:
                 # --- Chart 3: Platform Engagements (Bar Chart) ---
                 st.subheader("4. Platform Engagements 📱")
                 platform_engagements = df_filtered.groupby('platform')['engagements'].sum().sort_values(ascending=False).reset_index()
-                fig_platform_engagements = px.bar(platform_engagements, 
-                                                  x='platform', 
-                                                  y='engagements', 
+                fig_platform_engagements = px.bar(platform_engagements,
+                                                  x='platform',
+                                                  y='engagements',
                                                   title='Total Engagements by Platform',
                                                   color='platform',
                                                   color_discrete_sequence=px.colors.qualitative.Set2)
@@ -577,9 +581,9 @@ if uploaded_file is not None:
                 # --- Chart 5: Top 5 Locations (Bar Chart) ---
                 st.subheader("5. Top 5 Locations by Engagements 📍")
                 location_engagements = df_filtered.groupby('location')['engagements'].sum().nlargest(5).reset_index()
-                fig_top_locations = px.bar(location_engagements, 
-                                           x='location', 
-                                           y='engagements', 
+                fig_top_locations = px.bar(location_engagements,
+                                           x='location',
+                                           y='engagements',
                                            title='Top 5 Locations by Total Engagements',
                                            color='engagements',
                                            color_continuous_scale=px.colors.sequential.Tealgrn) # A nice gradient
@@ -598,30 +602,41 @@ if uploaded_file is not None:
 
             st.markdown("---")
             st.success("Dashboard Analysis Complete! ✨ Explore the tabs above and use the sidebar filters!")
-            
+
             # --- PDF Report Download ---
             st.header("Download Report 📄")
-            report_filename = st.text_input("Enter desired PDF report name (e.g., My_Ramadan_Campaign_Report):", value=f"Ramadan_Campaign_Report_{datetime.now().strftime('%Y%m%d')}")
-            
+            report_filename = st.text_input(
+                "Enter desired PDF report name:",
+                value=f"Ramadan_Campaign_Report_{datetime.now().strftime('%Y%m%d')}",
+                help="Specify a name for your PDF report. It will be saved as '.pdf'."
+            )
+
             if st.button("Generate & Download PDF Report ⬇️"):
-                with st.spinner("Generating PDF report... This may take a moment."):
-                    try:
-                        pdf_bytes = generate_pdf_report(figures_for_pdf, insights_for_pdf, report_name=report_filename, filters_summary=filters_summary_text)
-                        st.download_button(
-                            label="Click to Download PDF",
-                            data=pdf_bytes,
-                            file_name=f"{report_filename}.pdf",
-                            mime="application/pdf"
-                        )
-                        st.success("PDF report generated successfully!")
-                    except Exception as e:
-                        st.error(f"Error generating PDF report: {e}. Ensure all charts are displayed correctly.")
+                if not figures_for_pdf: # Check if charts were generated successfully
+                    st.warning("No charts were generated. Please ensure your data is correctly processed and filters don't result in empty data before generating a report.")
+                else:
+                    with st.spinner("Generating PDF report... This may take a moment."):
+                        try:
+                            pdf_bytes = generate_pdf_report(figures_for_pdf, insights_for_pdf, report_name=report_filename, filters_summary=filters_summary_text)
+                            st.download_button(
+                                label="Click to Download PDF",
+                                data=pdf_bytes,
+                                file_name=f"{report_filename}.pdf",
+                                mime="application/pdf"
+                            )
+                            st.success("PDF report generated successfully!")
+                        except Exception as e:
+                            st.error(f"Error generating PDF report: {e}. Please check your data or try again. Details: {e}")
             st.markdown("---")
             st.markdown("Developed with ❤️ using Streamlit, Plotly, OpenRouter AI, and ReportLab.")
 
+    except Exception as e: # This is the outer except block for reading CSV
+        st.error(f"Error reading file: {e}. Please ensure it's a valid CSV file with correct formatting (e.g., comma-separated values).")
+        df = None # Ensure df is None if initial read fails
 else:
+    # This 'else' correctly matches the outermost 'if uploaded_file is not None:'
     st.info("⬆️ Please upload a CSV file in the sidebar to get started with your Ramadan Campaign analysis.")
-    st.image("https://images.unsplash.com/photo-1549449089-a2e6e3c8f3a3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", 
+    st.image("https://images.unsplash.com/photo-1549449089-a2e6e3c8f3a3?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
              caption="Ramadan Campaign Insights", use_column_width=True)
     st.markdown("""
     **💡 Tip:** Your CSV file should have the following columns for best results:
